@@ -1,6 +1,8 @@
 #pragma once
-//PaoChat 1.0
-//2019.9.1  16:00
+/*
+PaoChat 1.5
+修改时间 9/3/20:03
+*/
 #include <windows.h>
 #include<iostream>
 #pragma comment(lib, "ws2_32.lib")
@@ -13,12 +15,13 @@ using namespace std;
 #define SIGNUPNUM 3
 #define LOGOUTNUM 4
 #define CHOOSENUM 5
+#define ADDFRIENDNUM 6
 #define CHOOSEFRIENDNUM 7
 
 
 SOCKET clientSocket;
 
-
+//已通过测试
 int prepare() {
 	// 1.请求版本协议
 	WSADATA wsData;
@@ -59,7 +62,7 @@ int prepare() {
 	cout << "服务器连接成功" << endl;
 	return 0;
 }
-int Login(char*_name, char* _password) {
+int Login(char* _name, char* _password) {
 	/*
 	作用：登录
 	参数：用户名，密码
@@ -78,7 +81,8 @@ int Login(char*_name, char* _password) {
 	//与服务器通讯进行验证
 	send(clientSocket, buff, strlen(buff), NULL);
 	recv(clientSocket, buff, 1024, NULL);
-	if (logInfo[0] == 100 && logInfo[1] == CHECKNUM) {
+
+	if (buff[0] == 100 && buff[1] == CHECKNUM) {
 		return -1;
 	}
 	else {
@@ -100,12 +104,12 @@ int Register(char* _name, char* _password) {
 	logInfo = name + ";" + password;
 	char* buff = (char*)logInfo.data();
 	int len = strlen(buff);
-	buff[len] = CHECKNUM;
+	buff[len] = SIGNUPNUM;
 	buff[len + 1] = 0;
 	//与服务器通讯进行验证
 	send(clientSocket, buff, strlen(buff), NULL);
 	recv(clientSocket, buff, 1024, NULL);
-	if (buff[0] == 3 && buff[1] == SIGNUPNUM) {
+	if (buff[0] == 100 && buff[1] == SIGNUPNUM) {
 		cout << "该用户名已被注册!" << endl;
 		return -1;
 	}
@@ -129,21 +133,6 @@ int choosePattern(int stutas) {
 	if (s == -1) return -1;
 	else return 0;
 }
-string receiveMessage() {
-	/*
-	作用：接受消息
-	参数：无
-	返回值：message内容， NULL表示无消息
-	*/
-	string message;
-	char Buff[1024];
-	int r = recv(clientSocket, Buff, 1023, NULL);
-	if (r > 0 && Buff[r - 1] == MESSAGENUM) {
-		Buff[r - 1] = 0;
-		return message;
-	}
-	return NULL;
-}
 int sendMessage(char* buff) {
 	/*
 	作用：向服务器发送消息
@@ -161,16 +150,33 @@ int sendMessage(char* buff) {
 	}
 	return 0;
 }
-int logOut() {
+string receiveMessage() {
 	/*
-	作用：向服务器发送下线信号
+	作用：接受消息
 	参数：无
-	返回值：0成功， -1 失败
+	返回值：message内容， NULL表示无消息
 	*/
-	char buff[2];
-	buff[0] = MESSAGENUM;
-	buff[1] = 0;
-	int s = send(clientSocket, buff, strlen(buff), NULL);
+
+	char Buff[1024];
+	int r = recv(clientSocket, Buff, 1023, NULL);
+	if (r > 0 && Buff[r - 1] == MESSAGENUM) {
+		Buff[r - 1] = 0;
+		//
+		return Buff;
+	}
+	return NULL;
+}
+int addFriend(char* name) {
+	/*
+	作用：添加好友
+	参数：好友name
+	返回值：0表示成功,1表示失败
+	*/
+	char* buff = name;
+	int len = strlen(buff);
+	buff[len] = ADDFRIENDNUM;
+	buff[len + 1] = 0;
+	int s = send(clientSocket, buff, len + 1, NULL);
 	if (s == -1) {
 		closesocket(clientSocket);
 		WSACleanup();
@@ -178,29 +184,20 @@ int logOut() {
 	}
 	return 0;
 }
-string* reciveFriendList() {
+string receiveFriendList() {
 	/*
 	作用：接收服务器发来的好友列表
 	参数：无
-	返回值：一个字符串数组，值为好友name
+	返回值：格式为：“好友名;好友名;好友名;...”
 	*/
-	string friendList[100];
-	memset(friendList, 0, sizeof(friendList));
 	char buff[1024];
 	int r = recv(clientSocket, buff, 1023, NULL);
 	if (r > 0 && buff[r - 1] == CHOOSEFRIENDNUM) {
 		buff[r - 1] = 0;
-		char* p;
-		int num = 0;
-		p = strtok(buff, ";");
-		while (p) {
-			friendList[num] = p;
-			//cout << num << ":" << p << endl;
-			p = strtok(NULL, ";");
-			num++;
-		}
+		//cout <<"!!" << buff << endl;
+		return buff;
 	}
-	return friendList;
+	return NULL;
 }
 int chooseFriend(int num) {
 	/*
@@ -212,6 +209,26 @@ int chooseFriend(int num) {
 	buff[0] = num + '0';
 	buff[1] = CHOOSEFRIENDNUM;
 	buff[2] = 0;
+	int s = send(clientSocket, buff, strlen(buff), NULL);
+	if (s == -1) {
+		closesocket(clientSocket);
+		WSACleanup();
+		return -1;
+	}
+	return 0;
+}
+
+
+//未通过测试
+int logOut() {
+	/*
+	作用：向服务器发送下线信号
+	参数：无
+	返回值：0成功， -1 失败
+	*/
+	char buff[2];
+	buff[0] = MESSAGENUM;
+	buff[1] = 0;
 	int s = send(clientSocket, buff, strlen(buff), NULL);
 	if (s == -1) {
 		closesocket(clientSocket);

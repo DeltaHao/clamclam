@@ -1,3 +1,9 @@
+/*
+PaoChat 1.5
+修改时间 9/2/20:00
+
+*/
+
 #include <windows.h>
 #include<iostream>
 #include"intConnect.h"
@@ -12,23 +18,26 @@ int choosePattern(int);
 string receiveMessage();
 int sendMessage(char*);
 int logOut();
-string* reciveFriendList();
+string receiveFriendList();
 int chooseFriend(int);
 
-void recive(){
+void recive() {
 	string message;
 	while (1) {
-		message = receiveMessage();
-		if (message[0] != 0){
+		message = receiveMessage(); 
+		//cout << message << endl;
+		if (message[0] != 0) {
 			cout << message << endl;
 		}
 	}
 }
 
 int main() {
-	prepare();
+	if (prepare() < 0) {
+		return -1;
+	}
 	//登录或注册
-	int op;
+	char op;
 	cout << ">>>>>请登录或注册(登录输1,注册输2):";
 	cin >> op;
 	if (op == '1') {
@@ -37,9 +46,9 @@ int main() {
 			char password[1024];
 			cout << ">>>登录" << endl;
 			cout << ">>>>>用户名:";
-			gets_s(name);
+			cin >> name;
 			cout << ">>>>>密码:";
-			gets_s(password);
+			cin >> password;
 			int l = Login(name, password);
 			if (l == 0) {
 				cout << "登陆成功！" << endl;
@@ -56,9 +65,9 @@ int main() {
 			char password[1024];
 			cout << ">>>注册" << endl;
 			cout << ">>>>>用户名:";
-			gets_s(name);
+			cin >> name;
 			cout << ">>>>>密码:";
-			gets_s(password);
+			cin >> password;
 			int r = Register(name, password);
 			if (r == 0) {
 				cout << "注册成功！" << endl;
@@ -74,11 +83,13 @@ int main() {
 	cout << "请选择群聊或单聊（群聊1，单聊2）" << endl;
 	int choosenum;
 	cin >> choosenum;
+	getchar();
 	int c = choosePattern(choosenum);
-	if (c == 0) 
+	if (c == 0)
 		cout << "选择成功！" << endl;
 	else  cout << "选择失败！" << endl;
 
+	//接收服务器消息
 	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)recive, NULL, NULL, NULL);
 
 	if (choosenum == 1) {
@@ -87,13 +98,32 @@ int main() {
 			char message[1024];
 			gets_s(message);
 			int s = sendMessage(message);
-			if (s == 0)cout << "发送成功！" << endl;
+			if (s == 0) cout << "发送成功！" << endl;
 			else cout << "发送失败！" << endl;
 		}
 	}
 	else if (choosenum == 2) {
-		cout << "进入群聊界面" << endl;
-
+		cout << "进入单聊界面" << endl;
+		string friendList;
+		friendList = receiveFriendList();
+		cout << "您的好友有：" ;
+		if(friendList[0])
+			cout << friendList << endl;
+		cout << "请选择聊天对象：";
+		int friendNum;
+		cin >> friendNum;
+		getchar();
+		int c = chooseFriend(friendNum);
+		if (c == 0) cout << "选择成功！" << endl;
+		else cout << "选择失败！" << endl;
+		//发送消息
+		while (1) {
+			char message[1024];
+			gets_s(message);
+			int s = sendMessage(message);
+			if (s == 0) cout << "发送成功！" << endl;
+			else cout << "发送失败！" << endl;
+		}
 	}
 
 	return 0;
