@@ -7,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "server", "server.vcxproj", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "clamclam", "..\client\soul\soul.vcxproj", "{F46B6634-B167-4B9A-90A5-8BA9AF74DB67}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "client-console", "D:\myfiles\code\c cpp\a\a.vcxproj", "{C0C1D8E4-5427-4FD3-B967-0C626D951FD4}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "client-console", "..\client-console\a.vcxproj", "{C0C1D8E4-5427-4FD3-B967-0C626D951FD4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
