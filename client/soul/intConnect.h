@@ -9,7 +9,7 @@
 #pragma comment(lib, "ws2_32.lib")
 
 using namespace std;
-#define IP "192.168.43.189"
+#define IP "10.195.159.153"
 #define PORT 12000
 #define CHECKNUM 1
 #define MESSAGENUM 2

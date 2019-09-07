@@ -12,7 +12,7 @@ using namespace std;
 #include "obj.h"
 #pragma comment(lib, "ws2_32.lib")
 
-#define IP "192.168.43.189"
+#define IP "10.195.159.153"
 #define PORT 12000
 
 /*
@@ -37,6 +37,7 @@ using namespace std;
 
 #define WORNG_USER 100
 //函数声明
+void service(int);
 void chatroomConnection(int);
 void singleConnection(int);
 int databaseInit();
@@ -57,6 +58,8 @@ static int usersnum;//数据库中用户的数量
 User users[100];//从数据库中接收的用户信息
 static int friendssnum;//数据库中好友对的数量
 Friends friends[100];//从数据库中接收的好友对信息
+char* userIP;
+User newUser;
 
 int prepare() {
 	/*
@@ -64,6 +67,7 @@ int prepare() {
 	参数：无；
 	返回值：-1表示出错，直接退出；
 	*/
+	memset(users, 0, sizeof(users));
 	//初始化数据库,建表
 	databaseInit();
 	createUser();
@@ -104,7 +108,7 @@ int prepare() {
 		closesocket(serverSocket);
 		WSACleanup();
 		return -2;
-	}
+	} 
 	printf("------绑定ip，端口成功------\n");
 
 
@@ -119,10 +123,8 @@ int prepare() {
 	printf("正在监听......\n");
 	return 0;
 }
-
 int main() {
-	if(prepare()<0) return 0;
-	
+	if (prepare() < 0) return 0;
 	//6.等待用户连接
 	while (1) {
 
@@ -135,95 +137,111 @@ int main() {
 			WSACleanup();
 			return -2;
 		}
-		printf("用户%d连接了服务器：%s!\n", concOrder, inet_ntoa(cAddr.sin_addr));
+		userIP = inet_ntoa(cAddr.sin_addr);
+		printf("用户%d连接了服务器：%s!\n", concOrder, userIP);
+				
+		CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)service, (char*)concOrder, NULL, NULL);
+		concOrder++;
 
-
-		//接受身份验证信息，进行验证(登录/ 注册)
-		int flag = 1;
-		while (flag) {
-			char checkBuff[1024];
-			int r = recv(clientSocket[concOrder], checkBuff, 1023, NULL);
-			if (r > 0) {
-				int type = checkBuff[r - 1];//决定登录还是注册
-				checkBuff[r - 1] = 0;
-				char name[1024];
-				char password[1024];
-
-				//将checkBuff中的内容分别存入name， password中
-				char* p = password;
-				int temp = 0;
-				for (int i = 0; checkBuff[i]; i++) {
-					if (temp)* (p++) = checkBuff[i];
-					if (checkBuff[i] != ';') {
-						name[i] = checkBuff[i];
-					}
-					else {
-						name[i] = 0;
-						temp = 1;
-					}
-				}
-				*p = 0;
-
-
-				if (type == CHECKNUM) {//登录
-					//验证用户名和密码
-					int userid = logInCheck(name, password);
-					if (userid == -1)
-						checkBuff[0] = WORNG_USER;
-					else {
-						flag = 0;
-						
-					}					
-					checkBuff[1] = CHECKNUM;
-					checkBuff[2] = 0;
-					send(clientSocket[concOrder], checkBuff, strlen(checkBuff), NULL);
-				}
-				else if (type == SIGHUPNUM) {//注册
-					//在数据库中查询
-					int userid = logInCheck(name, password);
-					if (userid != -1)//如果已经有该用户
-						checkBuff[0] = WORNG_USER;
-					else {
-						//向数据库插入新用户
-						insertUser(inet_ntoa(cAddr.sin_addr), name, password);
-						//更新本地用户类顺便改变新注册用户的在线状态
-						usersnum = getUsers(users);
-						flag = 0;
-						
-					}
-					
-					checkBuff[1] = SIGHUPNUM;
-					checkBuff[2] = 0;
-					send(clientSocket[concOrder], checkBuff, strlen(checkBuff), NULL);
-				}
-
-				//将用户名与登录序号绑定
-				strcpy(usernames[concOrder], name);
-			}
-		}
-		//用户选择是单聊还是群聊	
-		char buff[1024];
-		memset(buff, 0, sizeof(buff));
-		int r = recv(clientSocket[concOrder], buff, 1023, NULL);
-		if (r > 0 && buff[r - 1] == CHOOSENUM) {
-			if (buff[0] == '1') {
-				//创造新线程, 进入群聊界面
-				// 7. 服务器接收客户端发来的信息
-				cout << "用户" << usernames[concOrder] << "选择了群聊" << endl;
-				CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)chatroomConnection, (char*)concOrder, NULL, NULL);
-				concOrder++;
-			}
-
-			else if (buff[0] == '2') {
-				cout << "用户" << usernames[concOrder] << "选择了单聊" << endl;
-				CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)singleConnection, (char*)concOrder, NULL, NULL);
-				concOrder++;
-			}
-		}
 	}
 	return 0;
 }
+int logInCheck(string name, string password) {
+	for (int i = 0; i < usersnum; i++) {
+		if (users[i].name == name && users[i].password == password) {
+			return users[i].id;
+		}
+	}	
+	return -1;
+}
+void service(int idx) {
+	//接受身份验证信息，进行验证(登录/ 注册)
+	int flag = 1;
+	while (flag) {
+		char checkBuff[1024];
+		int r = recv(clientSocket[idx], checkBuff, 1023, NULL);
+		if (r > 0) {
+			int type = checkBuff[r - 1];//决定登录还是注册
+			checkBuff[r - 1] = 0;
+			char name[1024];
+			char password[1024];
+
+			//将checkBuff中的内容分别存入name， password中
+			char* p = password;
+			int temp = 0;
+			for (int i = 0; checkBuff[i]; i++) {
+				if (temp)* (p++) = checkBuff[i];
+				if (checkBuff[i] != ';') {
+					name[i] = checkBuff[i];
+				}
+				else {
+					name[i] = 0;
+					temp = 1;
+				}
+			}
+			*p = 0;
+
+
+			if (type == CHECKNUM) {//登录
+				//验证用户名和密码
+				int userid = logInCheck(name, password);
+				if (userid == -1) {
+					cout << usernames[idx] << "登录失败！" << endl;
+					checkBuff[0] = WORNG_USER;
+				}
+				else {
+					flag = 0;
+					cout << usernames[idx] << "登录成功！" << endl;
+				}
+				checkBuff[1] = CHECKNUM;
+				checkBuff[2] = 0;
+				send(clientSocket[idx], checkBuff, strlen(checkBuff), NULL);
+			}
+			else if (type == SIGHUPNUM) {//注册
+				//在数据库中查询
+				int userid = logInCheck(name, password);
+				if (userid != -1) {//如果已经有该用户
+					checkBuff[0] = WORNG_USER;
+					cout << usernames[idx] << "注册失败！" << endl;
+				}
+				else {
+					//向数据库插入新成员
+					insertUser(userIP, name, password);
+					//更新本地用户类顺便改变新注册用户的在线状态
+					usersnum = getUsers(users);
+					flag = 0;
+					cout << usernames[idx] << "注册成功！" << endl;
+				}
+
+				checkBuff[1] = SIGHUPNUM;
+				checkBuff[2] = 0;
+				send(clientSocket[idx], checkBuff, strlen(checkBuff), NULL);
+			}
+
+			//将用户名与登录序号绑定
+			strcpy(usernames[idx], name);
+		}
+	}
+	//用户选择是单聊还是群聊	
+	char buff[1024];
+	memset(buff, 0, sizeof(buff));
+	int r = recv(clientSocket[idx], buff, 1023, NULL);
+	if (r > 0 && buff[r - 1] == CHOOSENUM) {
+		if (buff[0] == '1') {
+			//创造新线程, 进入群聊界面
+			// 7. 服务器接收客户端发来的信息
+			cout << "用户" << usernames[idx] << "选择了群聊" << endl;
+			chatroomConnection(idx);
+		}
+
+		else if (buff[0] == '2') {
+			cout << "用户" << usernames[idx] << "选择了单聊" << endl;
+			singleConnection(idx);
+		}
+	}
+}
 void singleConnection(int idx) {//单聊函数
+
 	//查询该用户的好友,加入friendList链表和friendStream字符串流
 	int count=0;
 	string friendList[100];

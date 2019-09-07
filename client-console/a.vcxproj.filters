@@ -15,12 +15,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\浏览器下载\main.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\浏览器下载\intConnect.h">
+    <ClInclude Include="intConnect.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

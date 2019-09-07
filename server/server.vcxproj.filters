@@ -27,4 +27,7 @@
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\..\..\..\Program Files\MySQL\MySQL Server 8.0\lib\libmysql.dll" />
+  </ItemGroup>
 </Project>
