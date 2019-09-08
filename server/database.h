@@ -8,7 +8,7 @@ database.h
 */
 #include<iostream>
 #include<Windows.h>
-#include <mysql.h>
+#include<mysql.h>
 #include<string>
 
 #include"obj.h"
@@ -46,15 +46,14 @@ int databaseInit(){
 	}
 
 	//连接数据库
-	if (NULL
-		!= mysql_real_connect(&mydata, "localhost", "root", "123", "im",
-			3306, NULL, 0))
+	if (NULL!= mysql_real_connect(&mydata, NULL, "root", "123", "im", 3306, NULL, CLIENT_MULTI_STATEMENTS))
 		//这里的地址，用户名，密码，端口可以根据自己本地的情况更改
 	{
 		cout << "======数据库连接成功======" << endl;
 	}
 	else {
 		cout << "mysql_real_connect() failed" << endl;
+		cout << mysql_error(&mydata) << endl;
 		return -1;
 	}
 	return 0;
@@ -83,6 +82,9 @@ int createUser() {
 		mysql_close(&mydata);
 		return -1;
 	}
+
+	
+
 	return 0;
 }
 
@@ -107,38 +109,12 @@ int createFriends() {
 		mysql_close(&mydata);
 		return -1;
 	}
+	do{
+		MYSQL_RES* pRes = mysql_store_result(&mydata);
+		if (pRes != NULL)
+			mysql_free_result(pRes);
+	} while (!mysql_next_result(&mydata));
 	return 0;
-}
-
-int logInCheck(string name, string password) {
-	/*
-	作用：进行用户身份验证
-	参数：用户名与密码	 
-	返回值：若成功，返回用户id，若没有该用户，返回-1
-	*/
-	//查询数据库中的用户身份， 若成功，返回用户id，若没有该用户，返回-1
-	sqlstr = "SELECT *FROM `im`.`user2`;";
-	if (0 == mysql_query(&mydata, sqlstr.c_str())) {
-		cout << "=====用户数据验证成功=====" << endl;
-		//一次性取得数据集
-		result = mysql_store_result(&mydata);
-		MYSQL_ROW row = NULL;
-		row = mysql_fetch_row(result);
-		while (NULL != row) {
-			if (name == row[2] && password == row[3]) {
-				cout << name << "登录成功！" << endl;
-				return atoi(row[0]);
-			}
-			row = mysql_fetch_row(result);
-		}
-		//cout << "登录失败！" << endl;`
-		return -1;
-	}
-	else {
-		cout << "用户验证 select data failed" << endl;
-		mysql_close(&mydata);
-		return -2;
-	}
 }
 
 int getUsers(User* users){
@@ -161,6 +137,11 @@ int getUsers(User* users){
 			row = mysql_fetch_row(result);
 			count++;
 		}
+		do {
+			MYSQL_RES* pRes = mysql_store_result(&mydata);
+			if (pRes != NULL)
+				mysql_free_result(pRes);
+		} while (!mysql_next_result(&mydata));
 		return count;
 	}
 	else {
@@ -189,6 +170,11 @@ int getFriends(Friends* friends) {/*
 			row = mysql_fetch_row(result);
 			count++;
 		}
+		do {
+			MYSQL_RES* pRes = mysql_store_result(&mydata);
+			if (pRes != NULL)
+				mysql_free_result(pRes);
+		} while (!mysql_next_result(&mydata));
 		return count;
 	}
 	else {
@@ -204,6 +190,7 @@ int insertUser(string ip, string name, string password) {
 	参数：用户ip，用户名，密码
 	返回值：成功为0，失败为-1
 	*/
+	
 	//插入user
 	sqlstr = "INSERT INTO `im`.`user2` (`ID`, `ipAddress`, `name`, `password`) ";
 	sqlstr += "VALUES (default,inet_aton('";
@@ -211,10 +198,16 @@ int insertUser(string ip, string name, string password) {
 	sqlstr += "'), '" + name + "', '" + password + "');";
 	if (0 == mysql_query(&mydata, sqlstr.c_str())) {
 		cout << "=====创建新用户成功=====" << endl;
+		do {
+			MYSQL_RES* pRes = mysql_store_result(&mydata);
+			if (pRes != NULL)
+				mysql_free_result(pRes);
+		} while (!mysql_next_result(&mydata));
 		return 1;
 	}
 	else {
 		cout << "mysql_query() insert data failed" << endl;
+		cout << mysql_error(&mydata) << endl;
 		mysql_close(&mydata);
 	}
 	return 0;
@@ -231,6 +224,11 @@ int insertFriends(string user1name, string user2name) {
 	sqlstr += "','" + user2name + "');";
 	if (0 == mysql_query(&mydata, sqlstr.c_str())) {
 		cout << "=====创建新好友对成功====" << endl;
+		do {
+			MYSQL_RES* pRes = mysql_store_result(&mydata);
+			if (pRes != NULL)
+				mysql_free_result(pRes);
+		} while (!mysql_next_result(&mydata));
 		return 0;
 	}
 	else {
@@ -238,47 +236,4 @@ int insertFriends(string user1name, string user2name) {
 		mysql_close(&mydata);
 		return -1;
 	}
-}
-
-int showusers(string tablename) {
-	//显示表的内容
-	sqlstr = "SELECT *FROM `im`.`" + tablename + "`";
-
-	if (0 == mysql_query(&mydata, sqlstr.c_str())) {
-		cout << "mysql_query() select data succeed" << endl;
-
-		//一次性取得数据集
-		result = mysql_store_result(&mydata);
-		//取得并打印行数
-		int rowcount = mysql_num_rows(result);
-		cout << "row count: " << rowcount << endl;
-
-		//取得并打印各字段的名称
-		unsigned int fieldcount = mysql_num_fields(result);
-		MYSQL_FIELD* field = NULL;
-		for (unsigned int i = 0; i < fieldcount; i++) {
-			field = mysql_fetch_field_direct(result, i);
-			cout << field->name << "\t\t";
-		}
-		cout << endl;
-
-		//打印各行
-		MYSQL_ROW row = NULL;
-		row = mysql_fetch_row(result);
-
-		while (NULL != row) {
-			for (int i = 0; i < fieldcount; i++) {
-				cout << row[i] << "\t\t";
-			}
-			cout << endl;
-			row = mysql_fetch_row(result);
-		}
-
-	}
-	else {
-		cout << "mysql_query() select data failed" << endl;
-		mysql_close(&mydata);
-		return -1;
-	}
-	return 0;
 }

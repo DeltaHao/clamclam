@@ -51,7 +51,7 @@ int main() {
 			cin >> password;
 			int l = Login(name, password);
 			if (l == 0) {
-				cout << "登陆成功！" << endl;
+				cout << "登录成功！" << endl;
 				break;
 			}
 			else {

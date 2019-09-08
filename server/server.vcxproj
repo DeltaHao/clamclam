@@ -126,11 +126,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="server.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="database.h" />
     <ClInclude Include="obj.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="server.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
