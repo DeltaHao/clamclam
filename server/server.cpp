@@ -37,9 +37,6 @@ using namespace std;
 
 #define WORNG_USER 100
 //函数声明
-void service(int);
-void chatroomConnection(int);
-void singleConnection(int);
 int databaseInit();
 int createUser();
 int createFriends();
@@ -59,7 +56,6 @@ User users[100];//从数据库中接收的用户信息
 static int friendssnum;//数据库中好友对的数量
 Friends friends[100];//从数据库中接收的好友对信息
 char* userIP;
-User newUser;
 
 int prepare() {
 	/*
@@ -123,39 +119,12 @@ int prepare() {
 	printf("正在监听......\n");
 	return 0;
 }
-int main() {
-	if (prepare() < 0) return 0;
-	//6.等待用户连接
-	while (1) {
-
-		SOCKADDR_IN cAddr = { 0 };
-		int len = sizeof(cAddr);
-		clientSocket[concOrder] = accept(serverSocket, (sockaddr*)& cAddr, &len);
-		if (clientSocket[concOrder] == -1) {
-			printf("客户端连接失败\n");
-			closesocket(serverSocket);
-			WSACleanup();
-			return -2;
-		}
-		userIP = inet_ntoa(cAddr.sin_addr);
-		printf("用户%d连接了服务器：%s!\n", concOrder, userIP);
-				
-		CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)service, (char*)concOrder, NULL, NULL);
-		concOrder++;
-
-	}
-	return 0;
-}
-int logInCheck(string name, string password) {
-	for (int i = 0; i < usersnum; i++) {
-		if (users[i].name == name && users[i].password == password) {
-			return users[i].id;
-		}
-	}	
-	return -1;
-}
 void service(int idx) {
-	//接受身份验证信息，进行验证(登录/ 注册)
+	/*
+	作用：每有一个客户端连接，建立新的线程服务之
+	参数：客户端连接序号
+	返回值：无
+	*/
 	int flag = 1;
 	while (flag) {
 		char checkBuff[1024];
@@ -302,8 +271,7 @@ void singleConnection(int idx) {//单聊函数
 	}
 	
 }
-void chatroomConnection(int idx) {
-	//群聊函数；
+void chatroomConnection(int idx) {//群聊函数；
 	char buff[1024];
 	memset(buff, 0, sizeof(buff));
 	while (1) {
@@ -340,4 +308,28 @@ void chatroomConnection(int idx) {
 			}
 		}
 	}
+}
+
+int main() {
+	if (prepare() < 0) return 0;
+	//6.等待用户连接
+	while (1) {
+
+		SOCKADDR_IN cAddr = { 0 };
+		int len = sizeof(cAddr);
+		clientSocket[concOrder] = accept(serverSocket, (sockaddr*)& cAddr, &len);
+		if (clientSocket[concOrder] == -1) {
+			printf("客户端连接失败\n");
+			closesocket(serverSocket);
+			WSACleanup();
+			return -2;
+		}
+		userIP = inet_ntoa(cAddr.sin_addr);
+		printf("用户%d连接了服务器：%s!\n", concOrder, userIP);
+
+		CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)service, (char*)concOrder, NULL, NULL);
+		concOrder++;
+
+	}
+	return 0;
 }

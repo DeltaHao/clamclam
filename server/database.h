@@ -184,6 +184,8 @@ int getFriends(Friends* friends) {/*
 	}
 }
 
+int logInCheck(string name, string password) {	/*	作用：进行用户身份验证	参数：用户名与密码	返回值：若成功，返回用户id，若没有该用户，返回-1	*/	//查询数据库中的用户身份， 若成功，返回用户id，若没有该用户，返回-1	sqlstr = "SELECT *FROM `im`.`user2`;";	if (0 == mysql_query(&mydata, sqlstr.c_str())) {		cout << "=====用户数据验证成功=====" << endl;		//一次性取得数据集		result = mysql_store_result(&mydata);		MYSQL_ROW row = NULL;		row = mysql_fetch_row(result);		while (NULL != row) {			if (name == row[2] && password == row[3]) {				cout << name << "登录成功！" << endl;				return atoi(row[0]);			}			row = mysql_fetch_row(result);		}		//cout << "登录失败！" << endl;`		return -1;	}	else {		cout << "用户验证 select data failed" << endl;		mysql_close(&mydata);		return -2;	}}
+
 int insertUser(string ip, string name, string password) {
 	/*
 	作用：将新用户加入数据库
