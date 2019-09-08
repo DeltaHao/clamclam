@@ -1,8 +1,4 @@
-/*
-PaoChat 1.5
-ÐÞ¸ÄÊ±¼ä 9/2/20:00
 
-*/
 
 #include <windows.h>
 #include<iostream>

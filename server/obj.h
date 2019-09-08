@@ -1,6 +1,6 @@
-/*PaoChat 1.5
+/*clamcalm 2.0
 obj.h
-修改日期 9/2/20:00
+修改日期 9/8/16.15
 */
 #pragma once
 /*

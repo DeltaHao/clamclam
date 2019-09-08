@@ -1,7 +1,4 @@
 #pragma once
-//PaoChat 2.0
-//2019.9.2  14£º26
-
 #include<afxwin.h>
 #include<iostream>
 #include<WS2tcpip.h>

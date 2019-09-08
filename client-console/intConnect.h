@@ -1,8 +1,4 @@
 #pragma once
-/*
-PaoChat 1.5
-ÐÞ¸ÄÊ±¼ä 9/3/20:03
-*/
 #include <windows.h>
 #include<iostream>
 #pragma comment(lib, "ws2_32.lib")
